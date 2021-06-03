@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.dao.FacilityDao">
+
+	<select id="getFacility" resultType="com.example.demo.model.FacilityModel">
+		select facility_name,longitude,latitude from facility;
+	</select>
+
+	<select id="getBestFacility" resultType="com.example.demo.model.FacilityModel">
+		select facility_name, longitude, latitude, POW((X - F.longitude),2)+POW((Y - F.latitude),2) distance
+		from facility F, (select AVG(longitude) X, AVG(latitude) Y from users) as R
+		order by POW((X - F.longitude),2)+POW((Y - F.latitude),2)
+		limit 30;
+	</select>
+
+	<select id="getBestLandMark" resultType="com.example.demo.model.FacilityModel">
+		select num, longitude, latitude, POW((X - F.longitude),2)+POW((Y - F.latitude),2) distance
+		from cluster_test2 F, (select AVG(longitude) X, AVG(latitude) Y from users where ${_condition}) as R
+		order by POW((X - F.longitude),2)+POW((Y - F.latitude),2)
+		limit 30;
+	</select>
+</mapper>

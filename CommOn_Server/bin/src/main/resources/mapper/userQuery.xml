@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.dao.UserDao">
+
+	<select id="getUser"
+		resultType="com.example.demo.model.UserModel">
+		SELECT	ident,longitude,latitude,token
+		FROM	users
+	</select>
+	
+	<select id="getUserByCond"
+		resultType="com.example.demo.model.UserModel">
+		SELECT	ident,longitude,latitude
+		FROM	users
+		WHERE	${_condition}	
+	</select>
+
+	<select id="targetUser"
+		resultType="com.example.demo.model.UserModel">
+		SELECT	*
+		FROM 	users
+		WHERE 	ident = #{_id} and hashed_pw = #{_pw}
+	</select>
+	
+	<select id="targetUserbyID"
+		resultType="com.example.demo.model.UserModel">
+		SELECT	*
+		FROM 	users
+		WHERE 	ident = #{_id}
+	</select>
+
+	<insert id="joinUser">
+		INSERT
+		INTO 	users(ident,hashed_pw,latitude,longitude)
+		VALUES	(#{_id},#{_pw},0.0,0.0)
+	</insert>
+	
+	<!-- s
+	<update id="updateMember" >
+		UPDATE users
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="ident != null">ident = #{_id},</if>
+			<if test="latitude != null">latitude = #{_latitude},</if>
+			<if test="longitude != null">longitude = #{_longitude},</if>
+		</trim>
+	</update>
+	
+	<update id="deleteMember">
+		UPDATE users
+		WHERE	ident = #{_id}
+	</update>
+	-->
+	
+	<select id="printRelation" resultType = "com.example.demo.model.TUserModel">
+		SELECT	user1, user1reveal
+		FROM	user_relation
+		WHERE	(user1 = #{_id1} AND user2 = #{_id2}) OR
+				(user2 = #{_id1} AND user1 = #{_id2})
+	</select>
+	
+	<insert id="updateMember" >
+		<!-- 
+		UPDATE users
+		<trim prefix="SET" suffixOverrides=",">
+			<if test="ident != null">ident = #{_id},</if>
+			<if test="latitude != null">latitude = #{_latitude},</if>
+			<if test="longitude != null">longitude = #{_longitude},</if>
+		</trim>
+		 -->
+		 INSERT
+		 INTO	user_relation(user1, user2, user1reveal, user2reveal)
+		 VALUES	(#{_id}, #{_target_id}, ${_option1}, ${_option2})
+		 	ON DUPLICATE KEY
+		 	UPDATE user1 = user1
+	</insert>
+	
+	<update id="deleteMember">
+		DELETE 
+		FROM user_relation
+		WHERE user1=#{_id} AND user2=#{_target_id}
+	</update>
+	
+	<select id="getFriendUser"
+		resultType="com.example.demo.model.TUserModel">
+		SELECT	user2 as tuser, user1reveal as reveal
+		FROM	user_relation
+		WHERE	user1 = #{_id}
+		UNION
+		SELECT	user1 as tuser, user2reveal as reveal
+		FROM	user_relation
+		WHERE	user2 = #{_id}
+		ORDER BY tuser;
+	</select>
+	
+	<select id="getFriendSetUser"
+		resultType="com.example.demo.model.UserModel">
+		SELECT	ident,latitude,longitude,TIMESTAMPDIFF(minute,updated,now()) as diff
+		FROM	users
+		WHERE	users.ident in(	SELECT 	user2
+								FROM	user_relation
+								WHERE	#{_id} = user1 and user2reveal = 1) or
+				users.ident in(	SELECT 	user1
+								FROM	user_relation
+								WHERE	#{_id} = user2 and user1reveal = 1)
+	</select>
+
+	<update id="setLocation">
+		UPDATE	users
+		SET		latitude = #{_latitude}, longitude = #{_longitude}, updated = now()
+		WHERE	ident = #{_id}
+	</update>
+	
+	<update id="setOption1">
+		UPDATE	user_relation
+		SET		user1reveal = ${_option}
+		WHERE 	user1 = #{_id} and user2 = #{_target_id}
+		
+	</update>
+	
+	
+	<update id="setOption2">
+		UPDATE	user_relation
+		SET		user2reveal = ${_option}
+		WHERE	user2 = #{_id} and user1 = #{_target_id}
+	</update>
+	
+	<update id="setFtoken">
+		UPDATE	users
+		SET		token=#{_token}
+		WHERE	ident=#{_id}
+	</update>
+
+</mapper>
